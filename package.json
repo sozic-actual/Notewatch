@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
     "convert-array-to-csv": "^2.0.0",
     "react": "^19.2.8"
   }
