@@ -39,11 +39,12 @@ OUTPUT FORMAT (respond only in this structure):
 
 ## Rating: X/100 stars
 
-## Synopsis of what moved the needle
+## Synopsis of what moved the needle. Make this as concise as possible.
 Example:
 Given "60 min coding on Notewatch with Anthropic SDK" and "60 min Calc 1 homework"
 Progress towards software engineering goal, academic work
-
+## Estimated goal-task ratio
+X% of logged meaningful tasks went toward long-term goals
 
 
 
@@ -53,7 +54,12 @@ Returned as the JSON data structure below:
 "rating": "value",
 "synopsis": "value",
 "ratio": "value",
-"note": "value",
+}
+Example
+{
+  "rating": "72/100",
+  "synopsis": "Significant progress on Notewatch (short-term goal #1) with two focused coding sessions implementing key API and goal-fetching functionality. Learning Docker represents indirect contribution to software company ownership goal. Goal-setting session directly supports strategic clarity for long-term objectives. Academic work (Calc 1, Chem 2) and routine activities (bed-making, meditation) do not contribute to stated goals.",
+  "ratio": "50%"
 }
 
 ___
@@ -99,7 +105,22 @@ async function getAPIResponse(response, prompt) {
   const params = {
     max_tokens: 1024,
     messages: [{ role: "user", content: `${prompt} ${response}` }],
-    model: "claude-haiku-4-5"
+    model: "claude-haiku-4-5",
+    output_config: {
+      format: {
+        type: "json_schema",
+        schema: {
+          type: "object",
+          properties: {
+            rating: { type: "string" },
+            synopsis: { type: "string" },
+            ratio: { type: "string" },
+          },
+          required: ["rating", "synopsis", "ratio"],
+          additionalProperties: false
+        }
+      }
+    }
   }
 
   const message = await client.messages.create(params);
@@ -112,12 +133,11 @@ async function getAPIResponse(response, prompt) {
 
 const goals = JSON.stringify(await logGoals());
 const prompt = getPrompt(goals);
-console.log(prompt);
 
 const response = await logLatest(todayString);
 const apiResponse = await getAPIResponse(response, prompt);
-// console.log(apiResponse);
 
+console.log(apiResponse);
 
 
 /* const message = await client.messages.create({
