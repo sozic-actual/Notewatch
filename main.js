@@ -1,7 +1,8 @@
-import { readFile, writeFile, appendFile } from "node:fs";
+import { readFile, writeFile, appendFile, existsSync, write } from "node:fs";
 import { convertArrayToCSV } from "convert-array-to-csv";
 import Anthropic from "@anthropic-ai/sdk";
 import { resolve } from "node:dns";
+import { type } from "node:os";
 
 const today = new Date();
 today.setDate(today.getDate() - 1);
@@ -13,7 +14,7 @@ const client = new Anthropic({
 
 
 
-function getPrompt(goals) {
+function getPrompt(goals, date) {
   return `
 You are an honest and constructively critical performance evaluator. Your job is to determine how much of the log's activities moved the user towards their long-term goals. 
 Do not consider the following:
@@ -35,31 +36,27 @@ No weight: Routine maintenance. Examples such as brushing teeth, showering, hygi
 ZERO-ACTIVITY RULE
 If a document has absolutely nothing in it, or unproductive activities, rank that day as 0/100.
 
-OUTPUT FORMAT (respond only in this structure):
+OUTPUT FORMAT:
 
 ## Rating: X/100 stars
 
-## Synopsis of what moved the needle. Make this as concise as possible.
-Example:
-Given "60 min coding on Notewatch with Anthropic SDK" and "60 min Calc 1 homework"
-Progress towards software engineering goal, academic work
-## Estimated goal-task ratio
-X% of logged meaningful tasks went toward long-term goals
+## Synopsis of what moved the needle. Make this as concise as possible. Do not include semicolons.
+
 
 
 
 Returned as the JSON data structure below:
 
 {
+"date": "${date}"; (Change to MM-DD-YYYY)
 "rating": "value",
 "synopsis": "value",
-"ratio": "value",
 }
 Example
 {
+  "date": "08-10-2026",
   "rating": "72/100",
-  "synopsis": "Significant progress on Notewatch (short-term goal #1) with two focused coding sessions implementing key API and goal-fetching functionality. Learning Docker represents indirect contribution to software company ownership goal. Goal-setting session directly supports strategic clarity for long-term objectives. Academic work (Calc 1, Chem 2) and routine activities (bed-making, meditation) do not contribute to stated goals.",
-  "ratio": "50%"
+  "synopsis": "Significant progress on Notewatch (short-term goal #1), implementing key API and goal-fetching. Indirect contribution to software company ownership goal by learning Docker. Goal-setting session directly supports  clarity for long-term objectives. Academic work (Calc 1, Chem 2) and routine activities (bed-making, meditation) do not contribute to stated goals.",
 }
 
 ___
@@ -112,11 +109,11 @@ async function getAPIResponse(response, prompt) {
         schema: {
           type: "object",
           properties: {
+            date: { type: "string" },
             rating: { type: "string" },
             synopsis: { type: "string" },
-            ratio: { type: "string" },
           },
-          required: ["rating", "synopsis", "ratio"],
+          required: ["date", "rating", "synopsis"],
           additionalProperties: false
         }
       }
@@ -131,15 +128,32 @@ async function getAPIResponse(response, prompt) {
   return "Failed to get in time"
 }
 
+function appendToCSV(object) {
+  const array = Object.values(object);
+  const separated = array.join(";");
+  const headers = "date;rating;synopsis";
+  if (!existsSync('output.csv')) {
+    writeFile('output.csv', headers + "\r" + separated, 'utf-8', (err) => {
+      if (err) throw err;
+      console.log("File created.");
+    })
+  }
+  else {
+    appendFile('output.csv', "\r" + separated, 'utf-8', (err) => {
+      if (err) throw err;
+      console.log("Object appended.")
+    })
+  }
+  
+}
+
 const goals = JSON.stringify(await logGoals());
-const prompt = getPrompt(goals);
-
-const response = await logLatest(todayString);
+const prompt = getPrompt(goals, "2026-08-12");
+const response = await logLatest("2026-08-12");
 const apiResponse = await getAPIResponse(response, prompt);
+//const exampleReponse = {"date": "08-10-2026", "rating": "68/100", "synopsis": "Significant progress on Notewatch (short-term goal #1) with two focused coding sessions implementing API and goal-fetching functionality. Goal-setting session (30 min) directly supports strategic clarity for long-term objectives. Docker learning represents indirect contribution to software company ownership goal. Academic work (Calc 1, Chem 2) and routine activities (bed-making, meditation, reading) do not contribute to stated goals.", }
 
-console.log(apiResponse);
-
-
+appendToCSV(JSON.parse(apiResponse));
 /* const message = await client.messages.create({
   max_tokens: 1024,
   messages: [{ role: "user", content: "Hello, Claude" }],
