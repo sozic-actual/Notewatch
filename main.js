@@ -40,10 +40,22 @@ OUTPUT FORMAT:
 
 ## Rating: X/100 stars
 
-## Synopsis of what moved the needle. Make this as concise as possible. Do not include semicolons.
+## Synopsis of what moved the needle. Make this as concise as possible. Do not include semicolons. Your STRICT limit to this is 20 words. If something doesn't contribute, do not add it to the synopsis.
 
 
-
+REFERENCE TABLE
+Score	Day profile
+0	Zero goal-related activity across all 10 goals.
+5-10	1-2 goals touched indirectly only (e.g. skimmed an article, short walk). Rest untouched.
+15-20	2-3 goals touched indirectly, or 1 goal touched directly at moderate level.
+25-30	1 goal strong direct + 1-2 indirect touches elsewhere.
+35-40	2 goals direct/moderate, a couple indirect touches.
+45-50	2 goals strong direct, rest untouched or one indirect.
+55-60	3 goals direct (mix of moderate/strong), rest untouched.
+65-70	4 goals direct, at least 2 strong.
+75-80	5 goals direct, 2-3 strong — roughly "half your goal system got real attention."
+85-90	6-7 goals touched directly, most at strong level.
+95-100	All or nearly all 10 goals touched directly, most/all at strong level — rare, "everything aligned" day.
 
 Returned as the JSON data structure below:
 
@@ -55,8 +67,8 @@ Returned as the JSON data structure below:
 Example
 {
   "date": "08-10-2026",
-  "rating": "72/100",
-  "synopsis": "Significant progress on Notewatch (short-term goal #1), implementing key API and goal-fetching. Indirect contribution to software company ownership goal by learning Docker. Goal-setting session directly supports  clarity for long-term objectives. Academic work (Calc 1, Chem 2) and routine activities (bed-making, meditation) do not contribute to stated goals.",
+  "rating": "50/100",
+  "synopsis": "Significant progress on Notewatch implementing key API and goal-fetching. Learned Docker. Set future goals.",
 }
 
 ___
@@ -100,7 +112,7 @@ async function logGoals() {
 
 async function getAPIResponse(response, prompt) {
   const params = {
-    max_tokens: 1024,
+    max_tokens: 1500,
     messages: [{ role: "user", content: `${prompt} ${response}` }],
     model: "claude-haiku-4-5",
     output_config: {
@@ -133,13 +145,13 @@ function appendToCSV(object) {
   const separated = array.join(";");
   const headers = "date;rating;synopsis";
   if (!existsSync('output.csv')) {
-    writeFile('output.csv', headers + "\r" + separated, 'utf-8', (err) => {
+    writeFile('output.csv', headers + "\n" + separated, 'utf-8', (err) => {
       if (err) throw err;
       console.log("File created.");
     })
   }
   else {
-    appendFile('output.csv', "\r" + separated, 'utf-8', (err) => {
+    appendFile('output.csv', "\n" + separated, 'utf-8', (err) => {
       if (err) throw err;
       console.log("Object appended.")
     })
@@ -148,8 +160,8 @@ function appendToCSV(object) {
 }
 
 const goals = JSON.stringify(await logGoals());
-const prompt = getPrompt(goals, "2026-08-12");
-const response = await logLatest("2026-08-12");
+const prompt = getPrompt(goals, todayString);
+const response = await logLatest(todayString);
 const apiResponse = await getAPIResponse(response, prompt);
 
 appendToCSV(JSON.parse(apiResponse));
