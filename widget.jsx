@@ -34,7 +34,9 @@ const box = css`
   margin-left: 20px;
   margin-top: 5px;
   font-size: 0.6vw;
-  border-top: 1px solid rgba(106, 106, 106, 0.43)`
+  border-top: 1px solid rgba(106, 106, 106, 0.43);
+  line-height: 1.5`
+  
 
 
 const header_container = css`
@@ -44,15 +46,15 @@ const header_container = css`
   margin-left: 20px`
 
 export const className = `
-  left: 20px;
-  top: 20px;
+  left: 2%;
+  bottom: 2%;
   width: 200px;
   color: white;
-  font-family: monospace;
+  font-family: ubuntu;
   
 `
 
-export const refreshFrequency = 28800000;
+export const refreshFrequency = 10000;
 export const command = `tail -n 5 "/Users/andyvu/Library/Application Support/Übersicht/widgets/Notewatch/output.csv"`;
 
 function parseCSVString(csvString) {
